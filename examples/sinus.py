@@ -2,8 +2,13 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 from boo import GhostArray
+import cProfile
+import pstats
+import io
+from pstats import SortKey
 
 # problem config
+profile = False
 courant = 0.5
 v_x = 2
 v_y = 1
@@ -37,7 +42,12 @@ h = 1 / (N - 1)
 dt = courant / (v_x / h + v_y / h)
 T = 1
 
-# initialize
+# initialize cProfile()
+if profile:
+    pr = cProfile.Profile()
+    pr.enable()
+
+# initialize solver
 u0 = g(x, y)
 u = u0.copy()
 t = 0
@@ -71,7 +81,16 @@ while t < T:
 stopping_time = time.time()
 l2norm = np.sqrt(np.sum(np.square(u - u0)) * h * h)
 print(f"Computed {step_count} steps in {stopping_time - starting_time:.2f} s")
+if profile:
+    pr.disable()
+    s = io.StringIO()
+    sortby = SortKey.CUMULATIVE
+    ps = pstats.Stats(pr, stream=s).sort_stats(sortby)
+    ps.print_stats()
+    print(s.getvalue())
 
+
+# plot
 plt.imshow(np.flipud(u.T), extent=(x[0], x[-1], x[0], x[-1]))
 plt.xlabel("x")
 plt.ylabel("y")
