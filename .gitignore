@@ -1,0 +1,5 @@
+# packaging
+*.egg*
+
+# tests
+*/__pycache__/*
