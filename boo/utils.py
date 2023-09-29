@@ -109,6 +109,93 @@ def _convolve(array: np.ndarray, kernel: np.ndarray, axis: int = 0):
     return out
 
 
+def _gather_list_of_1D_neighbors(array: np.ndarray, axis: int):
+    """
+    args:
+        array   arbitrary shape
+        axis    spatial dimension of array
+    returns:
+        out     new first dimension of 3 neighbors, reduces length along $axis + 1$
+                dimension
+    """
+    idx = [slice(None)] * (array.ndim + 1)
+    expanded_array = np.expand_dims(array, axis=0)
+    # center
+    idx[axis + 1] = slice(1, -1)
+    neighbors = expanded_array[tuple(idx)]
+    # left neighbor
+    idx[axis + 1] = slice(None, -2)
+    neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+    # right neighbor
+    idx[axis + 1] = slice(2, None)
+    out = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+    return out
+
+
+def _gather_list_of_von_neumann_neighbors(array: np.ndarray, axes: list):
+    """
+    args:
+        array   arbitrary shape
+        axis    spatial dimensions of array
+    returns:
+        out     new first dimension of $2*ndim + 1$ neighbors, reduces length along
+                $axis + 1$ dimensions
+    """
+    idx = [slice(None)] * (array.ndim + 1)
+    expanded_array = np.expand_dims(array, axis=0)
+    if len(axes) == 2:
+        # center
+        idx[axes[0] + 1] = slice(1, -1)
+        idx[axes[1] + 1] = slice(1, -1)
+        neighbors = expanded_array[tuple(idx)]
+        # left
+        idx[axes[0] + 1] = slice(None, -2)
+        neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        # right
+        idx[axes[0] + 1] = slice(2, None)
+        neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        # bottom
+        idx[axes[0] + 1] = slice(1, -1)  # reset
+        idx[axes[1] + 1] = slice(None, -2)
+        neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        # top
+        idx[axes[1] + 1] = slice(2, None)
+        out = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        return out
+    raise NotImplementedError()
+
+
+def _gather_list_of_moore_neighbors(array: np.ndarray, axes: list):
+    idx = [slice(None)] * (array.ndim + 1)
+    expanded_array = np.expand_dims(array, axis=0)
+    neighbors = _gather_list_of_von_neumann_neighbors(array=array, axes=axes)
+    """
+    args:
+        array   arbitrary shape
+        axis    spatial dimensions of array
+    returns:
+        out     new first dimension of $2*ndim + 1$ neighbors, reduces length along
+                $axis + 1$ dimensions
+    """
+    if len(axes) == 2:
+        # bottom left
+        idx[axes[0] + 1] = slice(None, -2)
+        idx[axes[1] + 1] = slice(None, -2)
+        neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        # top left
+        idx[axes[1] + 1] = slice(2, None)
+        neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        # bottom right
+        idx[axes[0] + 1] = slice(2, None)
+        idx[axes[1] + 1] = slice(None, -2)
+        neighbors = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        # top right
+        idx[axes[1] + 1] = slice(2, None)
+        out = np.concatenate((neighbors, expanded_array[tuple(idx)]))
+        return out
+    raise NotImplementedError()
+
+
 def _multiconvolve(array: np.ndarray, kernels: np.ndarray, axis: int):
     """
     array of arbitrary size convolved with multiple 1d kernels

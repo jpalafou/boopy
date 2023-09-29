@@ -1,5 +1,12 @@
 import numpy as np
-from boo.utils import _as_pairs, _chop_off_ends, _multiconvolve
+from boo.utils import (
+    _as_pairs,
+    _chop_off_ends,
+    _gather_list_of_von_neumann_neighbors,
+    _gather_list_of_moore_neighbors,
+    _gather_list_of_1D_neighbors,
+    _multiconvolve,
+)
 
 
 class GhostArray:
@@ -236,18 +243,14 @@ class GhostArray:
         # if n_kernel is even and bias_shift = 0, right_rm > left_rm by 1
         left_rm = n_kernel // 2 + n_kernel % 2 - 1 - bias_shift
         right_rm = n_kernel // 2 + bias_shift
-        # remove spent pad width
-        new_pad_width = self.pad_width.copy()
-        new_pad_width[axis] = [
-            self.pad_width[axis][0] - left_rm,
-            self.pad_width[axis][1] - right_rm,
-        ]
-        # set constant value to 0 if the padding has been depleted
+        # remove spent padding
+        new_pad_width = np.asarray(self.pad_width)
+        new_pad_width[axis] -= np.array([left_rm, right_rm])
+        # remove constant if padding is depleted
         new_constant_values = np.asarray(self.constant_values)
-        if new_pad_width[axis][0] == 0:
-            new_constant_values[axis][0] = 0
-        if new_pad_width[axis][1] == 0:
-            new_constant_values[axis][1] = 0
+        new_constant_values[axis] = np.where(
+            new_pad_width[axis] == 0, 0, new_constant_values[axis]
+        )
         out = self.__class__(
             ghost_array=convolved_array,
             interior=None,
@@ -281,18 +284,16 @@ class GhostArray:
         # if n_kernel is even and bias_shift = 0, right_rm > left_rm by 1
         left_rm = n_kernel // 2 + n_kernel % 2 - 1 - bias_shift
         right_rm = n_kernel // 2 + bias_shift
-        # remove spent pad width
-        new_pad_width = [[0, 0]] + self.pad_width.copy()
-        new_pad_width[axis + 1] = [
-            self.pad_width[axis][0] - left_rm,
-            self.pad_width[axis][1] - right_rm,
-        ]
-        # set constant value to 0 if the padding has been depleted
-        new_constant_values = [[0, 0]] + self.constant_values
-        if new_pad_width[axis + 1][0] == 0:
-            new_constant_values[axis + 1] = [0, new_constant_values[axis + 1][1]]
-        if new_pad_width[axis + 1][1] == 0:
-            new_constant_values[axis + 1] = [new_constant_values[axis + 1][0], 0]
+        # remove spent padding
+        new_pad_width = np.concatenate((np.array([[0, 0]]), np.asarray(self.pad_width)))
+        new_pad_width[axis + 1] -= np.array([left_rm, right_rm])
+        # remove constant if padding is depleted
+        new_constant_values = np.concatenate(
+            (np.array([[0, 0]]), np.asarray(self.constant_values))
+        )
+        new_constant_values[axis + 1] = np.where(
+            new_pad_width[axis + 1] == 0, 0, new_constant_values[axis + 1]
+        )
         out = self.__class__(
             ghost_array=convolved_array,
             interior=None,
@@ -302,33 +303,47 @@ class GhostArray:
         )
         return out
 
-    def gather_neighbors(self, type: str = "moore"):
-        new_pad_width = self.pad_width.copy()
+    def apply_f_to_neighbors(
+        self, f: callable, axis: list = None, mode: str = "neumann", **kwargs
+    ):
+        """
+        ars:
+            axis    spatial dimensions
+            mode    'neumann' (no corners), 'moore' (corners)
+        returns:
+            new GhostArray instance with neighbors arranged along a new first dimension
+        """
         if self.ndim == 1:
-            list_of_neighbors = [
-                self.ghost_array[:-2],
-                self.ghost_array[1:-1],
-                self.ghost_array[2:],
-            ]
-            new_pad_width = (new_pad_width[0][0] - 1, new_pad_width[0][1] - 1)
-            return list_of_neighbors
-        if self.ndim == 2:
-            list_of_neighbors = [
-                self.ghost_array[:-2, 1:-1],
-                self.ghost_array[1:-1, :-2],
-                self.ghost_array[1:-1, 1:-1],
-                self.ghost_array[2:, 1:-1],
-                self.ghost_array[1:-1, 2:],
-            ]
-
-            new_pad_width = [
-                (new_pad_width[0][0] - 1, new_pad_width[0][1] - 1),
-                (new_pad_width[1][0] - 1, new_pad_width[1][1] - 1),
-            ]
-            return list_of_neighbors
-        raise NotImplementedError(
-            f"Gathering neighbors of a {self.ndim}-dimensional array."
+            axis = 0 if axis is None else axis
+            neighbors = _gather_list_of_1D_neighbors(array=self.ghost_array, axis=axis)
+        elif mode == "neumann":
+            axis = list(range(self.ndim)) if axis is None else axis
+            neighbors = _gather_list_of_von_neumann_neighbors(
+                array=self.ghost_array, axes=axis
+            )
+        elif mode == "moore":
+            axis = list(range(self.ndim)) if axis is None else axis
+            neighbors = _gather_list_of_moore_neighbors(
+                array=self.ghost_array, axes=axis
+            )
+        # apply f
+        new_array = f(neighbors, axis=0, **kwargs)
+        # remove spent padding
+        new_pad_width = np.asarray(self.pad_width)
+        new_pad_width[axis] -= np.array([1, 1])
+        # remove constant if padding is depleted
+        new_constant_values = np.asarray(self.constant_values)
+        new_constant_values[axis] = np.where(
+            new_pad_width[axis] == 0, 0, new_constant_values[axis]
         )
+        out = self.__class__(
+            ghost_array=new_array,
+            interior=None,
+            pad_width=new_pad_width,
+            mode=self.mode,
+            constant_values=new_constant_values,
+        )
+        return out
 
     def __repr__(self):
         return (
