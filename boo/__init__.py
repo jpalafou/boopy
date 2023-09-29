@@ -7,6 +7,7 @@ from boo.utils import (
     _gather_list_of_1D_neighbors,
     _multiconvolve,
 )
+from typing import Type
 
 
 class GhostArray:
@@ -58,7 +59,7 @@ class GhostArray:
             self.dtype = ghost_array.dtype
         self.slices = None  # compute slices only as needed
 
-    def _config_np_pad(self):
+    def _config_np_pad(self) -> None:
         """
         helper method for _compute_ghost_zone
         args:
@@ -78,7 +79,7 @@ class GhostArray:
         }
         self._np_pad_config = np_pad_configs[self.mode]
 
-    def _compute_ghost_zone(self):
+    def _compute_ghost_zone(self) -> None:
         """
         args:
             self.interior
@@ -91,7 +92,7 @@ class GhostArray:
         self.ghost_array = np.pad(array=self.interior, **self._np_pad_config)
         self.dtype = self.ghost_array.dtype
 
-    def _compute_slices(self):
+    def _compute_slices(self) -> None:
         """
         helper method for _compute_interior
         args:
@@ -104,7 +105,7 @@ class GhostArray:
                 slice(left, -right or None) for left, right, in self.pad_width
             ]
 
-    def _compute_interior(self):
+    def _compute_interior(self) -> None:
         """
         args:
             self.ghost_array
@@ -117,18 +118,17 @@ class GhostArray:
             self.interior = self.ghost_array[tuple(self.slices)]
             self.shape = self.interior.shape
 
-    def to_numpy(self, region: str = "interior"):
+    def to_numpy(self) -> np.ndarray:
         """
-        return interior arra as np.ndarray
-        args:
-            region  "interior" or "ghost_array"
         returns
             self.interior
         """
         self._compute_interior()
         return self.interior
 
-    def add_along_axis(self, axis: list, pad_width: list, constant_values: list = 0):
+    def add_along_axis(
+        self, axis: list, pad_width: list, constant_values: list = 0
+    ) -> Type["GhostArray"]:
         """
         modify the padding along specified axes
         args:
@@ -181,7 +181,7 @@ class GhostArray:
         self.slices = None  # slices are no longer accurate
         return self
 
-    def remove_along_axis(self, axis: list = None):
+    def remove_along_axis(self, axis: list = None) -> Type["GhostArray"]:
         """
         remove the padding along specified axes
         args:
@@ -220,7 +220,9 @@ class GhostArray:
         self.slices = None
         return self
 
-    def convolve(self, kernel: np.ndarray, axis: int = 0, bias_shift: int = 0):
+    def convolve(
+        self, kernel: np.ndarray, axis: int = 0, bias_shift: int = 0
+    ) -> Type["GhostArray"]:
         """
         1d convolution of a kernel on an array
         args:
@@ -260,7 +262,9 @@ class GhostArray:
         )
         return out
 
-    def multiconvolve(self, kernels: np.ndarray, axis: int = 0, bias_shift: int = 0):
+    def multiconvolve(
+        self, kernels: np.ndarray, axis: int = 0, bias_shift: int = 0
+    ) -> Type["GhostArray"]:
         """
         1d convolution of a multiple kernels on an array
         args:
@@ -305,7 +309,7 @@ class GhostArray:
 
     def apply_f_to_neighbors(
         self, f: callable, axis: list = None, mode: str = "neumann", **kwargs
-    ):
+    ) -> Type["GhostArray"]:
         """
         ars:
             axis    spatial dimensions
@@ -345,18 +349,18 @@ class GhostArray:
         )
         return out
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"GhostArray(interior = {self.interior}"
             + f", pad_width = {self.pad_width}, mode = {self.mode})"
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         interior_is_eq = np.all(self.interior == other.interior)
         ghost_array_is_eq = np.all(self.ghost_array == other.ghost_array)
         return interior_is_eq and ghost_array_is_eq
 
-    def __neg__(self):
+    def __neg__(self) -> Type["GhostArray"]:
         self._compute_interior()
         if self.mode == "dirichlet":
             return self.__class__(
@@ -384,7 +388,7 @@ class GhostArray:
     def __rsub__(self, other):
         raise NotImplementedError(f"{type(other)} - {self.__class__}")
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Type["GhostArray"]:
         self._compute_interior()
         if isinstance(other, int) or isinstance(other, float):
             if self.mode == "dirichlet":

@@ -72,7 +72,7 @@ def _as_pairs(x, ndim, as_index=False):
     return np.broadcast_to(x, (ndim, 2)).tolist()
 
 
-def _chop_off_ends(array: np.ndarray, chop_size: tuple, axis: int):
+def _chop_off_ends(array: np.ndarray, chop_size: tuple, axis: int) -> np.ndarray:
     """
     helper function for Ghost array
     remove ends of an array along axis
@@ -89,7 +89,7 @@ def _chop_off_ends(array: np.ndarray, chop_size: tuple, axis: int):
     return out
 
 
-def _convolve(array: np.ndarray, kernel: np.ndarray, axis: int = 0):
+def _convolve(array: np.ndarray, kernel: np.ndarray, axis: int = 0) -> np.ndarray:
     """
     array of arbitrary size convolved with 1d kernel
     args:
@@ -109,7 +109,7 @@ def _convolve(array: np.ndarray, kernel: np.ndarray, axis: int = 0):
     return out
 
 
-def _gather_list_of_1D_neighbors(array: np.ndarray, axis: int):
+def _gather_list_of_1D_neighbors(array: np.ndarray, axis: int) -> np.ndarray:
     """
     args:
         array   arbitrary shape
@@ -132,7 +132,7 @@ def _gather_list_of_1D_neighbors(array: np.ndarray, axis: int):
     return out
 
 
-def _gather_list_of_von_neumann_neighbors(array: np.ndarray, axes: list):
+def _gather_list_of_von_neumann_neighbors(array: np.ndarray, axes: list) -> np.ndarray:
     """
     args:
         array   arbitrary shape
@@ -172,7 +172,7 @@ def _gather_list_of_moore_neighbors(array: np.ndarray, axes: list):
     """
     args:
         array   arbitrary shape
-        axis    spatial dimensions of array
+        axes    spatial dimensions of array
     returns:
         out     new first dimension of $2*ndim + 1$ neighbors, reduces length along
                 $axis + 1$ dimensions
@@ -196,7 +196,7 @@ def _gather_list_of_moore_neighbors(array: np.ndarray, axes: list):
     raise NotImplementedError()
 
 
-def _multiconvolve(array: np.ndarray, kernels: np.ndarray, axis: int):
+def _multiconvolve(array: np.ndarray, kernels: np.ndarray, axis: int) -> np.ndarray:
     """
     array of arbitrary size convolved with multiple 1d kernels
     args:
@@ -218,7 +218,7 @@ def _multiconvolve(array: np.ndarray, kernels: np.ndarray, axis: int):
     return out
 
 
-def _stack(array: np.ndarray, stacks: int, axis: int = 0):
+def _stack(array: np.ndarray, stacks: int, axis: int = 0) -> np.ndarray:
     """
     helper function of _multiconvolve
     args:
