@@ -1,5 +1,5 @@
 import numpy as np
-import cupy as cp
+import numpy as cp  # import cupy as cp
 from boo.utils import (
     _as_pairs,
     _chop_off_ends,

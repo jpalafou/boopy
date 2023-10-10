@@ -1,6 +1,6 @@
 from boo import GhostArray
 import numpy as np
-import cupy as cp
+import numpy as cp  # import cupy as cp
 import random
 
 

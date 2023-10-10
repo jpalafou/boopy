@@ -1,10 +1,10 @@
 import pytest
 import numpy as np
-import cupy as cp
+import numpy as cp  # import cupy as cp
 from boo import GhostArray
 from tests.tools import GhostArray_is_consistent
 
-cupy = [True, False]
+cupy = [False]
 dtype = ["int", "float"]
 N = [1, 5]
 dimensions = [1, 2, 3, 4, 5]

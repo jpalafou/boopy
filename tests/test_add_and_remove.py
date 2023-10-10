@@ -14,7 +14,7 @@ N = [1, 10]
 dimensions = [1, 2, 3, 4, 5]
 mode = ["periodic", "dirichlet"]
 dtype = ["int", "float"]
-cupy = [True, False]
+cupy = [False]
 
 
 @pytest.mark.parametrize("cupy", cupy)

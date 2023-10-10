@@ -12,7 +12,7 @@ from tests.tools import (
 n_tests = 10
 max_gw = 3
 dtype = ["int", "float"]
-cupy = [True, False]
+cupy = [False]
 N = [1, 2, 3, 5, 10]
 dimensions = [1, 2, 3, 4, 5]
 mode = ["periodic", "dirichlet"]

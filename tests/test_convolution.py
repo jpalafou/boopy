@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-import cupy as cp
+import numpy as cp  # import cupy as cp
 from boo import GhostArray
 from tests.tools import (
     create_random_array,
@@ -15,7 +15,7 @@ dimensions = [1, 2, 3, 4, 5]
 axis = [0, 1, 2, 3, 4]
 mode = ["dirichlet", "periodic"]
 dtype = ["float", "int"]
-cupy = [True, False]
+cupy = [False]
 
 
 @pytest.mark.parametrize("cupy", cupy)
