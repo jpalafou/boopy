@@ -12,22 +12,27 @@ from tests.tools import (
 n_tests = 10
 max_gw = 3
 dtype = ["int", "float"]
+cupy = [True, False]
 N = [1, 2, 3, 5, 10]
 dimensions = [1, 2, 3, 4, 5]
 mode = ["periodic", "dirichlet"]
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_negative(n_test, dtype, N, dimensions, mode):
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+def test_negative(n_test, cupy, dtype, N, dimensions, mode):
+    a = create_random_array(nmax=N, ndim=dimensions, cupy=cupy, dtype=dtype)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw)
     constant_values = create_random_pad_width(ndim=dimensions, max=max_gw, min=-max_gw)
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     original_ghost_Array = a_gw.ghost_array.copy()
     n_a_gw = -a_gw
@@ -38,17 +43,21 @@ def test_negative(n_test, dtype, N, dimensions, mode):
     assert pad_widths_are_equal(a_gw.pad_width, n_a_gw.pad_width)
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_multiplication(n_test, dtype, N, dimensions, mode):
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+def test_multiplication(n_test, cupy, dtype, N, dimensions, mode):
+    a = create_random_array(nmax=N, ndim=dimensions, cupy=cupy, dtype=dtype)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw)
     constant_values = create_random_pad_width(ndim=dimensions, max=max_gw, min=-max_gw)
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     original_ghost_Array = a_gw.ghost_array.copy()
     multiplier = random.randint(-max_gw, max_gw)

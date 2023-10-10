@@ -1,4 +1,5 @@
 import numpy as np
+import cupy as cp
 from boo.utils import (
     _as_pairs,
     _chop_off_ends,
@@ -7,17 +8,17 @@ from boo.utils import (
     _gather_list_of_1D_neighbors,
     _multiconvolve,
 )
-from typing import Type
+from typing import Type, Union
 
 
 class GhostArray:
     def __init__(
         self,
-        interior: np.ndarray,
+        interior: Union[np.ndarray, cp.ndarray],
         pad_width: list,
         mode: str = "dirichlet",
         constant_values: list = 0,
-        ghost_array: np.ndarray = None,
+        ghost_array: Union[np.ndarray, cp.ndarray] = None,
     ):
         """
         args:
@@ -40,6 +41,7 @@ class GhostArray:
         """
         self.interior = interior
         self.ndim = interior.ndim if self.interior is not None else ghost_array.ndim
+        self.xp = np
 
         # configure arguments for np.pad()
         self.mode = mode
@@ -54,9 +56,14 @@ class GhostArray:
         if self.interior is not None:
             self.shape = self.interior.shape
             self._compute_ghost_zone()
+            self.dtype = self.interior.dtype
+            if isinstance(self.interior, cp.ndarray):
+                self.xp = cp
         else:
             self.ghost_array = ghost_array
-            self.dtype = ghost_array.dtype
+            self.dtype = self.ghost_array.dtype
+            if isinstance(self.ghost_array, cp.ndarray):
+                self.xp = cp
         self.slices = None  # compute slices only as needed
 
     def _config_np_pad(self) -> None:
@@ -235,11 +242,11 @@ class GhostArray:
             new GhostArray instance with less padding in the axis dimension
         """
         # find kernel dimensions
-        kernel_np = np.asarray(kernel)
-        n_kernel = kernel_np.size
+        kernel_xp = self.xp.asarray(kernel)
+        n_kernel = kernel_xp.size
         # perform convolutions
         convolved_array = _multiconvolve(
-            array=self.ghost_array, kernels=kernel_np[np.newaxis], axis=axis
+            array=self.ghost_array, kernels=np.expand_dims(kernel_xp, axis=0), axis=axis
         )[0]
         # find amount to chop off either end of array
         # if n_kernel is even and bias_shift = 0, right_rm > left_rm by 1
@@ -278,11 +285,11 @@ class GhostArray:
             an axis + 1 dimension with reduced length
         """
         # find kernel dimensions
-        kernels_np = np.asarray(kernels)
-        N_kernels, n_kernel = kernels_np.shape
+        kernels_xp = self.xp.asarray(kernels)
+        N_kernels, n_kernel = kernels_xp.shape
         # perform convolutions
         convolved_array = _multiconvolve(
-            array=self.ghost_array, kernels=kernels_np, axis=axis
+            array=self.ghost_array, kernels=kernels_xp, axis=axis
         )
         # find amount to chop off either end of array
         # if n_kernel is even and bias_shift = 0, right_rm > left_rm by 1

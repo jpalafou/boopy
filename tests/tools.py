@@ -1,10 +1,16 @@
 from boo import GhostArray
 import numpy as np
+import cupy as cp
 import random
 
 
 def create_random_array(
-    nmax: int, ndim: int, upper: int = 9, lower: int = 0, dtype: str = "int"
+    nmax: int,
+    ndim: int,
+    upper: int = 9,
+    lower: int = 0,
+    cupy: bool = False,
+    dtype: str = "int",
 ):
     """
     args:
@@ -12,9 +18,12 @@ def create_random_array(
         ndim    number of dimensions
         upper   max possible value
         lower   min possible value
+        cupy    whether to use cupy
+        dtype   data type
     returns
         np.ndarray
     """
+
     dims = []
     for _ in range(ndim):
         dims.append(random.randint(1, nmax))
@@ -22,7 +31,10 @@ def create_random_array(
         convert = 1
     if dtype == "float":
         convert = 1.0
-    return convert * np.random.randint(lower, upper + 1, dims)
+    xpy = np
+    if cupy:
+        xpy = cp
+    return convert * xpy.random.randint(lower, upper + 1, dims)
 
 
 def create_random_pad_width(ndim: int, max: int, min: int = 0, type: "str" = None):

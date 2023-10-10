@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import cupy as cp
 from boo import GhostArray
 from tests.tools import (
     create_random_array,
@@ -14,8 +15,10 @@ dimensions = [1, 2, 3, 4, 5]
 axis = [0, 1, 2, 3, 4]
 mode = ["dirichlet", "periodic"]
 dtype = ["float", "int"]
+cupy = [True, False]
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
@@ -26,7 +29,9 @@ dtype = ["float", "int"]
     [{"kernel": [0], "gw": (0, 0)}, {"kernel": [0, 0, 0], "gw": (1, 1)}],
 )
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_zero_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_config):
+def test_zero_convolution(
+    n_test, cupy, dtype, N, dimensions, axis, mode, kernel_config
+):
     """
     convolution with a kernel of 0s
         data type of convolved array should be correct
@@ -36,14 +41,17 @@ def test_zero_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_confi
     if axis > dimensions - 1:
         return
     kernel = kernel_config["kernel"]
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw, type="list")
     pad_width[axis] = kernel_config["gw"]
     constant_values = create_random_pad_width(
         ndim=dimensions, max=max_gw, min=-max_gw, type="list"
     )
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     a_gw = a_gw.convolve(kernel, axis=axis)
     assert a_gw.dtype == dtype
@@ -52,6 +60,7 @@ def test_zero_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_confi
     assert np.all(a_np == np.zeros_like(a_np))
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
@@ -62,7 +71,9 @@ def test_zero_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_confi
     [{"kernel": [1], "gw": (0, 0)}, {"kernel": [0, 1, 0], "gw": (1, 1)}],
 )
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_unit_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_config):
+def test_unit_convolution(
+    n_test, cupy, dtype, N, dimensions, axis, mode, kernel_config
+):
     """
     convolution with a unit kernet
         data type of convolved array should be correct
@@ -72,14 +83,17 @@ def test_unit_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_confi
     if axis > dimensions - 1:
         return
     kernel = kernel_config["kernel"]
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw, type="list")
     pad_width[axis] = kernel_config["gw"]
     constant_values = create_random_pad_width(
         ndim=dimensions, max=max_gw, min=-max_gw, type="list"
     )
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     a_gw = a_gw.convolve(kernel, axis=axis)
     assert a_gw.dtype == dtype
@@ -88,13 +102,14 @@ def test_unit_convolution(n_test, dtype, N, dimensions, axis, mode, kernel_confi
     assert np.all(a_np == a)
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("axis", axis)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_multiconvolution_01(n_test, dtype, N, dimensions, axis, mode):
+def test_multiconvolution_01(n_test, cupy, dtype, N, dimensions, axis, mode):
     """
     convolution with a list of kernels: one unit, one zero, and another unit
         data type of convolved array should be correct
@@ -107,14 +122,17 @@ def test_multiconvolution_01(n_test, dtype, N, dimensions, axis, mode):
     if axis > dimensions - 1:
         return
     kernels = [[0, 1, 0], [0, 0, 0], [0, 1, 0]]
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw, type="list")
     pad_width[axis] = (1, 1)
     constant_values = create_random_pad_width(
         ndim=dimensions, max=max_gw, min=-max_gw, type="list"
     )
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     a_gw = a_gw.multiconvolve(kernels, axis=axis)
     assert a_gw.dtype == dtype
@@ -126,13 +144,14 @@ def test_multiconvolution_01(n_test, dtype, N, dimensions, axis, mode):
     assert np.all(a_np[2] == a)
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("axis", axis)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_multiconvolution_duplicates(n_test, dtype, N, dimensions, axis, mode):
+def test_multiconvolution_duplicates(n_test, cupy, dtype, N, dimensions, axis, mode):
     """
     convolution with a list of kernels: one unit, one zero, and another unit
         data type of convolved array should be correct
@@ -144,14 +163,17 @@ def test_multiconvolution_duplicates(n_test, dtype, N, dimensions, axis, mode):
     if axis > dimensions - 1:
         return
     kernels = [[1, 2, 1], [1, 2, 1], [1, 2, 1]]
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw, type="list")
     pad_width[axis] = (1, 1)
     constant_values = create_random_pad_width(
         ndim=dimensions, max=max_gw, min=-max_gw, type="list"
     )
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     a_gw = a_gw.multiconvolve(kernels, axis=axis)
     assert a_gw.dtype == dtype
@@ -162,7 +184,8 @@ def test_multiconvolution_duplicates(n_test, dtype, N, dimensions, axis, mode):
     assert np.all(a_np[2] == a_np[0])
 
 
-def test_convolve_1d():
+@pytest.mark.parametrize("cupy", cupy)
+def test_convolve_1d(cupy):
     """
     compute the second derivative of g(x) = exp(-x^2) by applying a second order
     central derivative approximation twice
@@ -181,20 +204,27 @@ def test_convolve_1d():
         x = np.linspace(-5, 5, N)
         h = 10 / (N - 1)
 
+        expected_values = gdotdot(x[2:-2])
+        if cupy:
+            expected_values = cp.asarray(expected_values)
+
         u = g(x)
+        if cupy:
+            u = cp.asarray(u)
         u_ghost = GhostArray(
             ghost_array=u, interior=None, pad_width=2, mode="dirichlet"
         )
         dudx = u_ghost.convolve(kernel) / (2 * h)
         ddudxx = (dudx.convolve(kernel) / (2 * h)).to_numpy()
-        l2norm = np.sqrt(np.sum(np.square(ddudxx - gdotdot(x[2:-2]))) / N)
+        l2norm = np.sqrt(np.sum(np.square(ddudxx - expected_values)) / N)
 
         assert l2norm < previous_l2norm
         previous_l2norm = l2norm
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("n_vars", [1, 5, 10])
-def test_convole_1d_multivar(n_vars):
+def test_convole_1d_multivar(cupy, n_vars):
     """
     compute the second derivative of g(x) = exp(-x^2) by applying a second order
     central derivative approximation twice for an array of size (n_vars, N)
@@ -214,14 +244,23 @@ def test_convole_1d_multivar(n_vars):
         x = np.linspace(-5, 5, N)
         h = 10 / (N - 1)
 
+        expected_values = gdotdot(x[2:-2])
+        if cupy:
+            expected_values = cp.asarray(expected_values)
+
         u = g(x)
+        if cupy:
+            u = cp.asarray(u)
         u_ghost = GhostArray(
-            ghost_array=u, interior=None, pad_width=[(0, 0), (2, 2)], mode="dirichlet"
+            ghost_array=u,
+            interior=None,
+            pad_width=[(0, 0), (2, 2)],
+            mode="dirichlet",
         )
         dudx = u_ghost.convolve(kernel, axis=1) / (2 * h)
         ddudxx = (dudx.convolve(kernel, axis=1) / (2 * h)).to_numpy()
         l2norm = [
-            np.sqrt(np.sum(np.square((ddudxx - gdotdot(x[2:-2]))[i])) / N)
+            np.sqrt(np.sum(np.square((ddudxx - expected_values)[i])) / N)
             for i in range(n_vars)
         ]
 
@@ -230,7 +269,8 @@ def test_convole_1d_multivar(n_vars):
         previous_l2norm = l2norm
 
 
-def test_convolve_2d():
+@pytest.mark.parametrize("cupy", cupy)
+def test_convolve_2d(cupy):
     """
     solve 2D advection du/dt + v_x du/dx + v_y du/dy = 0
     """
@@ -267,6 +307,8 @@ def test_convolve_2d():
 
         # initialize
         u0 = g(x, y)
+        if cupy:
+            u0 = cp.asarray(u0)
         u = u0.copy()
         t = 0
         while t < T:
@@ -336,6 +378,8 @@ def test_multiconvolve_2d():
 
         # initialize
         u0 = g(x, y)
+        if cupy:
+            u0 = cp.asarray(u0)
         u = u0.copy()
         t = 0
         while t < T:

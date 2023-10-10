@@ -213,7 +213,9 @@ def _multiconvolve(array: np.ndarray, kernels: np.ndarray, axis: int) -> np.ndar
     reshaped_kernels = np.fliplr(kernels).reshape(new_kernel_shape)
     # reshape array similarly
     array_stack = _stack(array, stacks=n_kernel, axis=axis)
-    repeated_array_stack = np.repeat(array_stack[np.newaxis], repeats=N_kernels, axis=0)
+    repeated_array_stack = np.repeat(
+        np.expand_dims(array_stack, axis=0), repeats=N_kernels, axis=0
+    )
     out = np.sum(reshaped_kernels * repeated_array_stack, axis=1)
     return out
 

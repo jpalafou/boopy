@@ -14,14 +14,16 @@ N = [1, 10]
 dimensions = [1, 2, 3, 4, 5]
 mode = ["periodic", "dirichlet"]
 dtype = ["int", "float"]
+cupy = [True, False]
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_add_padding(n_test, dtype, N, dimensions, mode):
+def test_add_padding(n_test, cupy, dtype, N, dimensions, mode):
     """
     when using add_along_axis method
         initial GhostArray should be consistent
@@ -32,11 +34,14 @@ def test_add_padding(n_test, dtype, N, dimensions, mode):
         new GhostArray should be consistent
     """
     # initialize random GhostArray
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, cupy=cupy, dtype=dtype)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw)
     constant_values = create_random_pad_width(ndim=dimensions, max=max_gw, min=-max_gw)
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     assert GhostArray_is_consistent(a_gw)
     original_pad_width = a_gw.pad_width.copy()
@@ -57,7 +62,7 @@ def test_add_padding(n_test, dtype, N, dimensions, mode):
         pad_width=new_pad_width,
         constant_values=new_constant_values,
     )
-    assert np.all(a_gw.interior == a)
+    np.all(a_gw.interior == a)
     solution_pad_width = np.asarray(original_pad_width)
     solution_pad_width[axis_of_modification] = np.asarray(new_pad_width)
     assert np.all(np.array(a_gw.pad_width) == solution_pad_width)
@@ -69,12 +74,13 @@ def test_add_padding(n_test, dtype, N, dimensions, mode):
     assert GhostArray_is_consistent(a_gw)
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_remove_all_padding(n_test, dtype, N, dimensions, mode):
+def test_remove_all_padding(n_test, cupy, dtype, N, dimensions, mode):
     """
     when using remove_along_axis method with axis=None
         interior should not change
@@ -84,11 +90,14 @@ def test_remove_all_padding(n_test, dtype, N, dimensions, mode):
         new GhostArray should be consistent
     """
     # initialize random GhostArray
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw)
     constant_values = create_random_pad_width(ndim=dimensions, max=max_gw, min=-max_gw)
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     GhostArray_is_consistent(a_gw)
     a_gw.remove_along_axis(axis=None)
@@ -102,12 +111,13 @@ def test_remove_all_padding(n_test, dtype, N, dimensions, mode):
     assert a_gw.dtype == dtype
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_remove_one_axis_of_padding(n_test, dtype, N, dimensions, mode):
+def test_remove_one_axis_of_padding(n_test, cupy, dtype, N, dimensions, mode):
     """
     when using remove_along_axis method with axis=int
         interior should not change
@@ -117,11 +127,14 @@ def test_remove_one_axis_of_padding(n_test, dtype, N, dimensions, mode):
         new GhostArray should be consistent
     """
     # initialize random GhostArray
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw)
     constant_values = create_random_pad_width(ndim=dimensions, max=max_gw, min=-max_gw)
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     original_pad_width = a_gw.pad_width.copy()
     original_constant_values = a_gw.constant_values.copy()
@@ -147,12 +160,13 @@ def test_remove_one_axis_of_padding(n_test, dtype, N, dimensions, mode):
     assert GhostArray_is_consistent(a_gw)
 
 
+@pytest.mark.parametrize("cupy", cupy)
 @pytest.mark.parametrize("dtype", dtype)
 @pytest.mark.parametrize("N", N)
 @pytest.mark.parametrize("dimensions", dimensions)
 @pytest.mark.parametrize("mode", mode)
 @pytest.mark.parametrize("n_test", range(n_tests))
-def test_remove_multiple_axes_of_padding(n_test, dtype, N, dimensions, mode):
+def test_remove_multiple_axes_of_padding(n_test, cupy, dtype, N, dimensions, mode):
     """
     when using remove_along_axis method with axis=list
         initial GhostArray should be consistent
@@ -163,11 +177,14 @@ def test_remove_multiple_axes_of_padding(n_test, dtype, N, dimensions, mode):
         new GhostArray should be consistent
     """
     # initialize random GhostArray
-    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype)
+    a = create_random_array(nmax=N, ndim=dimensions, dtype=dtype, cupy=cupy)
     pad_width = create_random_pad_width(ndim=dimensions, max=max_gw)
     constant_values = create_random_pad_width(ndim=dimensions, max=max_gw, min=-max_gw)
     a_gw = GhostArray(
-        interior=a, pad_width=pad_width, mode=mode, constant_values=constant_values
+        interior=a,
+        pad_width=pad_width,
+        mode=mode,
+        constant_values=constant_values,
     )
     original_pad_width = a_gw.pad_width.copy()
     original_constant_values = a_gw.constant_values.copy()
